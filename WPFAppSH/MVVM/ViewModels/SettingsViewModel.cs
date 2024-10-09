@@ -39,6 +39,8 @@ public partial class SettingsViewModel : ObservableObject
             {
                 ConnectionSucceededInput = "Connection successful!";
 
+                _deviceClientHandler.IsConnectionStringSet = true;
+                _deviceClientHandler.IsDeviceConnected = true;
                 _connectionStringStorage.SaveConnectionString(ConnectionStringInput);
             }
             else

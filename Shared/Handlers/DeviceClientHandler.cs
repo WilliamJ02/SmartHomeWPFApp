@@ -9,6 +9,8 @@ namespace Shared.Handlers;
 public class DeviceClientHandler
 {
     public event Action<bool>? ConnectionStatusChanged;
+    public bool IsConnectionStringSet {  get; set; } = false;
+    public bool IsDeviceConnected { get; set; } = false;
     public DeviceSettings Settings { get; private set; } = new();
     private DeviceClient? _client;
 
