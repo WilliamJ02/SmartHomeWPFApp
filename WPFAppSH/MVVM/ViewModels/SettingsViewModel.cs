@@ -18,8 +18,6 @@ public partial class SettingsViewModel : ObservableObject
         _connectionStringStorage = new ConnectionStringStorage();
     }
 
-
-
     [ObservableProperty]
     private string _connectionStringInput;
     [ObservableProperty]
@@ -30,18 +28,36 @@ public partial class SettingsViewModel : ObservableObject
     {
         if (!string.IsNullOrEmpty(ConnectionStringInput))
         {
+            var existingConnections = _connectionStringStorage.LoadAllConnectionStringsAndDeviceIds();
+            bool connectionExists = existingConnections.Any(pair => pair.connectionString == ConnectionStringInput);
+
+            if (connectionExists)
+            {
+                var existingDeviceId = existingConnections.First(pair => pair.connectionString == ConnectionStringInput).deviceId;
+                _deviceClientHandler.Settings.DeviceId = existingDeviceId;
+            }
+            else
+            {
+                _deviceClientHandler.Settings.DeviceId = Guid.NewGuid().ToString();
+            }
+
             _deviceClientHandler.SetConnectionString(ConnectionStringInput);
 
             var lamp = _lampService.Lamp;
+
             var result = _deviceClientHandler.Initialize(lamp);
 
             if (result.Succeeded)
             {
                 ConnectionSucceededInput = "Connection successful!";
 
+                if (!connectionExists)
+                {
+                    _connectionStringStorage.SaveConnectionStringAndDeviceId(ConnectionStringInput, _deviceClientHandler.Settings.DeviceId);
+                }
+
                 _deviceClientHandler.IsConnectionStringSet = true;
                 _deviceClientHandler.IsDeviceConnected = true;
-                _connectionStringStorage.SaveConnectionString(ConnectionStringInput);
             }
             else
             {
@@ -52,8 +68,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             ConnectionSucceededInput = "Field is empty!";
         }
+
         ConnectionStringInput = string.Empty;
     }
-
-
 }

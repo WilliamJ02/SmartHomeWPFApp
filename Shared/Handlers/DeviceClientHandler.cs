@@ -11,8 +11,9 @@ public class DeviceClientHandler
     public event Action<bool>? ConnectionStatusChanged;
     public bool IsConnectionStringSet {  get; set; } = false;
     public bool IsDeviceConnected { get; set; } = false;
-    public DeviceSettings Settings { get; private set; } = new();
     private DeviceClient? _client;
+    private ConnectionStringStorage _connectionStringStorage = new();
+    public DeviceSettings Settings { get; private set; } = new DeviceSettings();
 
     public void SetConnectionString(string connectionString)
     {
@@ -30,10 +31,8 @@ public class DeviceClientHandler
             if (_client != null)
             {
                 _client.SetConnectionStatusChangesHandler(ConnectionStatusChangeHandler);
-
-
-                Task.WhenAll(_client.SetMethodDefaultHandlerAsync(DirectMethodDefaultCallback, null),
-                    UpdateDeviceTwinPropertiesAsync(lamp));
+                
+                Task.Run(() =>  UpdateDeviceTwinPropertiesAsync(lamp));
                 response.Succeeded = true;
                 
             }
@@ -74,47 +73,6 @@ public class DeviceClientHandler
         }
 
         return response;
-    }
-
-    public async Task<MethodResponse> DirectMethodDefaultCallback(MethodRequest request, object userContext)
-    {
-        var methodResponse = request.Name.ToLower() switch
-        {
-            "start" => await OnStartAsync(),
-            "stop" => await OnStopAsync(),
-            _ => GenerateMethodResponse("No suitable method found", 404)
-        };
-
-        return methodResponse;
-    }
-
-    public async Task<MethodResponse> OnStartAsync()
-    {
-        Settings.DeviceState = true;
-
-        var result = await UpdateDeviceTwinDeviceStateAsync();
-        if (result.Succeeded)
-        {
-            return GenerateMethodResponse("DeviceState set to start", 200);
-        }
-        else
-        {
-            return GenerateMethodResponse($"{result.Message}", 400);
-        }
-    }
-    public async Task<MethodResponse> OnStopAsync()
-    {
-        Settings.DeviceState = false;
-
-        var result = await UpdateDeviceTwinDeviceStateAsync();
-        if (result.Succeeded)
-        {
-            return GenerateMethodResponse("DeviceState set to stop", 200);
-        }
-        else
-        {
-            return GenerateMethodResponse($"{result.Message}", 400);
-        }
     }
 
     public void ConnectionStatusChangeHandler(ConnectionStatus status, ConnectionStatusChangeReason reason)
@@ -225,6 +183,9 @@ public class DeviceClientHandler
 
         try
         {
+            var deviceId = Settings.DeviceId;
+            var existingIds = _connectionStringStorage.LoadAllDeviceIds();
+            
             var reportedProperties = new TwinCollection
             {
                 ["connectionState"] = true,
@@ -235,10 +196,14 @@ public class DeviceClientHandler
                 ["LampBrightness"] = lamp.Brightness
             };
 
+            if (!existingIds.Contains(deviceId))
+            {
+                reportedProperties["deviceId"] = deviceId;
+            }
+
             if (_client != null)
             {
                 await _client.UpdateReportedPropertiesAsync(reportedProperties);
-
                 response.Succeeded = true;
             }
             else
@@ -252,9 +217,9 @@ public class DeviceClientHandler
             response.Succeeded = false;
             response.Message = ex.Message;
         }
+
         return response;
     }
-
 
     public async Task<ResultResponse> SendDataAsync(string data, CancellationToken cancellationToken)
     {

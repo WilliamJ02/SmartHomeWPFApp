@@ -1,8 +1,8 @@
 ﻿namespace Shared.Models;
 
 public class DeviceSettings
-{
-    private string _deviceId = Guid.NewGuid().ToString();
+{   
+    public string DeviceId { get; set; } = Guid.NewGuid().ToString();
     public bool DeviceState { get; set; }
     public string? ConnectionString { get; set; } = null!;
     public string? DeviceName { get; set; } = "Bedroom Lamp";

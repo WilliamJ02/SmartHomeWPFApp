@@ -40,7 +40,7 @@ public partial class HomeViewModel : ObservableObject
     }
     public bool IsLampOn => _lampService.Lamp.Toggled;
 
-    [RelayCommand(CanExecute = nameof(CanToggleLampConnection))]
+    [RelayCommand(CanExecute = nameof(CanToggleLamp))]
     private async Task ToggleLamp()
     {
         var cts = new CancellationTokenSource();
@@ -126,5 +126,10 @@ public partial class HomeViewModel : ObservableObject
     private bool CanToggleLampConnection()
     {
         return _deviceClientHandler.IsConnectionStringSet;
+    }
+
+    private bool CanToggleLamp()
+    {
+        return _deviceClientHandler.IsDeviceConnected;
     }
 }

@@ -5,6 +5,7 @@ using WPFAppSH.MVVM.ViewModels;
 using WPFAppSH.MVVM.Views;
 using Shared.Services;
 using Shared.Handlers;
+using Shared;
 
 namespace WPFAppSH;
 
@@ -15,13 +16,12 @@ public partial class App : Application
     {
         host = Host.CreateDefaultBuilder().ConfigureServices(services =>
         {
-            services.AddSingleton<ILampService, LampService>();          
+            services.AddSingleton<ILampService, LampService>();
+            services.AddSingleton<ConnectionStringStorage>();
 
             services.AddSingleton<DeviceClientHandler>(provider =>
-            {
-                var connectionString = "Your Azure IoT Hub Connection String";
+            {               
                 var deviceClientHandler = new DeviceClientHandler();
-                deviceClientHandler.SetConnectionString(connectionString);
                 return deviceClientHandler;
             });
 
