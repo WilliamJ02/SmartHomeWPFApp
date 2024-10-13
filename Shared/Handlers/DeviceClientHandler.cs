@@ -198,7 +198,7 @@ public class DeviceClientHandler
 
             if (!existingIds.Contains(deviceId))
             {
-                reportedProperties["deviceId"] = deviceId;
+                reportedProperties["DeviceId"] = deviceId;
             }
 
             if (_client != null)
